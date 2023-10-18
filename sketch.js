@@ -3,6 +3,7 @@
 
 const MAX_VELOCITY = -10;
 const GRAVITY = 0.3;
+const VISCOSITY_COEFFICIENT = 0.02;
 const LIFT_FORCE = -10;
 const SCROLL_SPEED = 3;
 
@@ -19,7 +20,7 @@ let isGameOver = false;
 //#region p5jsのイベント類
 function setup() {
     playerImage = loadImage('assets/images/kuroko_shitting.png');
-    player = new Player(GRAVITY, LIFT_FORCE, MAX_VELOCITY, playerImage);
+    player = new Player(GRAVITY, LIFT_FORCE, MAX_VELOCITY, VISCOSITY_COEFFICIENT, playerImage);
     score = 0
     createCanvas(480, 320);
 }
@@ -92,7 +93,7 @@ function gameOver() {
 function resetGameState() {
     return;
     // FIXME: メインループには復帰するが諸々のオブジェクトが消える
-    player = new Player(GRAVITY, LIFT_FORCE, MAX_VELOCITY);
+    player = new Player(GRAVITY, LIFT_FORCE, MAX_VELOCITY, VISCOSITY_COEFFICIENT);
     obstacles = [];
     score = 0;
     isGameOver = false;
@@ -101,7 +102,7 @@ function resetGameState() {
 
 // TODO: ライフを追加したい（無敵時間など付随ステータスも必要になりそう）
 class Player {
-    constructor(gravity, liftForce, maxVelocity, playerImage = null) {
+    constructor(gravity, liftForce, maxVelocity, viscosityCoefficient = 0.0, playerImage = null) {
         this.type = "Player";
         this.playerImage = player;
         this.x = width / 4;
@@ -111,6 +112,7 @@ class Player {
         this.liftForce = liftForce; // 1回羽ばたく際に増加する速度
         this.velocity = 0; // プレイヤーの速度（x方向のみ）
         this.maxVelocity = maxVelocity;// velocityの上限
+        this.viscosityCoefficient = viscosityCoefficient;  // 粘性係数
     }
 
     display() {
@@ -123,11 +125,17 @@ class Player {
     }
 
     update() {
+        this.velocity += this.gravity - this.velocity * this.viscosityCoefficient;  // 粘性抵抗を加味して計算
         // TODO: 上がる速度も落ちる速度も上限は同じ？
-        this.velocity = constrain(this.velocity + this.gravity, -abs(this.maxVelocity), abs(this.maxVelocity));// FIXME: 落ちるスピードが早すぎて羽ばたきが追いつかなくなる
+        this.velocity = constrain(this.velocity, -abs(this.maxVelocity), abs(this.maxVelocity));// FIXME: 落ちるスピードが早すぎて羽ばたきが追いつかなくなる
         // this.velocity += this.gravity;
         this.y += this.velocity;
         this.y = constrain(this.y, 0, height); // ゲーム画面の外に出ないようにする
+
+        // 着地していたら速度を 0 にする
+        if (this.y >= height) {
+            this.velocity = 0;
+        }
     }
 
     flap() {
