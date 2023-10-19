@@ -122,6 +122,11 @@ class Player {
             fill(255);
             ellipse(this.x, this.y, this.radius * 2);
         }
+        stroke(255, 0, 0);
+        strokeWeight(4);
+        line(this.x, this.y, this.x, this.y + this.velocity * 2.0);
+        stroke(0);
+        strokeWeight(1);
     }
 
     update() {
